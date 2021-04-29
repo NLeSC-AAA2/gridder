@@ -102,7 +102,7 @@ run-fpga-sincos.x: run-fpga-sincos.o common/common.o
 	(unset DISPLAY; ${AOC} ${AOCXFLAGS} -o $@ $<)
 
 %/build:
-	test -f $@ || test -f /tmp/stop || (mkdir -p $* && (echo `hostname` && mkdir -p /local/`basename $*` && cd /local/`basename $*` && SRCDIR=$(PWD) $(if $(findstring LU, $(word 2, $(subst _, , $*))), USE_SIN_COS_LOOKUP_TABLE=1) NR_GRIDDERS=$(word 3, $(subst _, , $*)) SEED=$(word 4, $(subst _, , $*)) time make -f $(PWD)/Makefile $(word 1, $(subst _, ,$(notdir $*))).aoco $(word 1, $(subst _, ,$(notdir $*))).aocr $(word 1, $(subst _, ,$(notdir $*))).aocx && awk '/ MHz/ || /freq:/' $(word 1, $(subst _, ,$(notdir $*)))/quartus_sh_compile.log|tail -n 1; cd $(PWD); mv /local/`basename $*`/* $*; rmdir /local/`basename $*` )>$@ 2>&1)
+	test -f $@ || test -f /tmp/stop || (mkdir -p $* && (echo `hostname` && mkdir -p /local-ssd/`basename $*` && cd /local-ssd/`basename $*` && SRCDIR=$(PWD) $(if $(findstring LU, $(word 2, $(subst _, , $*))), USE_SIN_COS_LOOKUP_TABLE=1) NR_GRIDDERS=$(word 3, $(subst _, , $*)) SEED=$(word 4, $(subst _, , $*)) time make -f $(PWD)/Makefile $(word 1, $(subst _, ,$(notdir $*))).aoco $(word 1, $(subst _, ,$(notdir $*))).aocr $(word 1, $(subst _, ,$(notdir $*))).aocx && awk '/ MHz/ || /freq:/' $(word 1, $(subst _, ,$(notdir $*)))/quartus_sh_compile.log|tail -n 1; cd $(PWD); mv /local-ssd/`basename $*`/* $*; rmdir /local-ssd/`basename $*` )>$@ 2>&1)
 
 clean::
 	rm -rf $(EXECUTABLES) $(OBJECT_FILES) $(FPGA_STUFF_SUBDIRS) $(DEPENDENCIES)

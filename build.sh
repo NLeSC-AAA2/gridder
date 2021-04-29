@@ -35,4 +35,4 @@ esac
 unset DISPLAY
 nohup make -f Makefile -k -j$NR_PARALLEL\
   `for i in \`seq $INTERVAL $INTERVAL \\\`expr $NR_PARALLEL \* $INTERVAL - $INTERVAL\\\`\`;do echo sleep.$i;done`\
-  `for s in \`seq 400 599\`;do for j in newgridder40a;do for g in \`seq 1 1\`;do echo /var/scratch/$USER/FPGA/${j}_LU_${g}_${s}/build;done;done;done` 2>&1 &
+  `for s in \`seq 400 599\`;do for j in gridder;do for g in \`seq 1 1\`;do echo /var/scratch/$USER/FPGA/${j}_LU_${g}_${s}/build;done;done;done` 2>&1 &
