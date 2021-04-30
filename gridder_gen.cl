@@ -2430,7 +2430,7 @@ inline void fft_32x32_4(float8 out[restrict 32][32], /*float8 out_upper[restrict
 
 void do_fft(__global float2 out[restrict NR_POLARIZATIONS][NR_PIXELS], float8 data[SUBGRID_SIZE][SUBGRID_SIZE])
 {
-#if 0
+#if 1
   float8 tmp[SUBGRID_SIZE][SUBGRID_SIZE] __attribute__((bank_bits(9))); // compiler does not understand how to do this without arbiter
 
   fft_32x32_4(tmp, data, FFT_BACKWARD);
@@ -2445,9 +2445,9 @@ void do_fft(__global float2 out[restrict NR_POLARIZATIONS][NR_PIXELS], float8 da
   for (unsigned short polarization = 0; polarization < NR_POLARIZATIONS; polarization ++)
     for (unsigned short pixel = 0; pixel < NR_PIXELS; pixel ++) {
       unsigned short x = pixel % SUBGRID_SIZE, y = pixel / SUBGRID_SIZE;
-      float8         tmp = y >= 16 ? tmp_upper[y & 15][x] : tmp_lower[y][x];
+      // float8         tmp = y >= 16 ? tmp_upper[y & 15][x] : tmp_lower[y][x];
 
-      out[polarization][pixel] = (float2) (tmp[2 * polarization + REAL], tmp[2 * polarization + IMAG]);
+      out[polarization][pixel] = (float2) (tmp[y][x][2 * polarization + REAL], tmp[y][x][2 * polarization + IMAG]);
     }
 }
 
