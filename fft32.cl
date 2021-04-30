@@ -294,6 +294,8 @@ void fft_32_ps( float2 * restrict s0, float2 * restrict s1, float2 * restrict s0
     }
 }
 /* ~\~ end */
+
+#if 0
 /* ~\~ begin <<lit/code-generator.md|fftsynth/templates/fma-fft.cl>>[1] */
 __kernel __attribute__((autorun)) __attribute__((max_global_work_dim(0)))
 void fft_32()
@@ -359,5 +361,6 @@ void sink(__global float2 *out, unsigned count)
         out[i] = read_channel_intel(out_channel);
     }
 }
+#endif
 /* ~\~ end */
 
