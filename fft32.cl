@@ -5,7 +5,9 @@
 /* ~\~ begin <<lit/code-generator.md|fftsynth/templates/preprocessor.cl>>[0] */
 #pragma OPENCL EXTENSION cl_intel_channels : enable
 #include <ihc_apint.h>
+#ifdef TESTING
 channel float8 in_channel, out_channel;
+#endif // TESTING
 #define SWAP(type, x, y) do { type temp = x; x = y, y = temp; } while ( false );
 
 #define DIVR(x) ((x) >> 1)
@@ -178,12 +180,12 @@ inline int comp_perm_2(int i, int rem)
 void fft_2(float8 * restrict s0, float8 * restrict s1, float8 * restrict s0_in, float8 * restrict s1_in, float8 * restrict s0_out, float8 * restrict s1_out, bool first_iteration, bool last_iteration, int cycle, int i0, int i1, int iw)
 {
     float8 t0, t1, a, b;
-    #ifndef TESTING
+    #ifndef TESTING_RADIX
     __constant float2 *w = W[iw];
-    #endif
-    #ifdef TESTING
+    #endif // !TESTING_RADIX
+    #ifdef TESTING_RADIX
     float2 w[] = {(float2)(1.0, 0.0)};
-    #endif // TESTING
+    #endif // TESTING_RADIX
 
     
     switch (cycle) {
@@ -295,6 +297,7 @@ void fft_32_ps( float8 * restrict s0, float8 * restrict s1, float8 * restrict s0
 }
 /* ~\~ end */
 /* ~\~ begin <<lit/code-generator.md|fftsynth/templates/fma-fft.cl>>[1] */
+#ifdef TESTING
 __kernel __attribute__((autorun)) __attribute__((max_global_work_dim(0)))
 void fft_32()
 {
@@ -336,11 +339,12 @@ void fft_32()
     }
     }
 }
+#endif // TESTING
 /* ~\~ end */
 
-#if 0
 /* ~\~ language=OpenCL filename=fftsynth/templates/fpga.cl */
 /* ~\~ begin <<lit/code-generator.md|fftsynth/templates/fpga.cl>>[0] */
+#ifdef TESTING
 __kernel __attribute__((max_global_work_dim(0)))
 void source(__global const volatile float8 * in, unsigned count)
 {
@@ -360,6 +364,6 @@ void sink(__global float8 *out, unsigned count)
         out[i] = read_channel_intel(out_channel);
     }
 }
-#endif
+#endif // TESTING
 /* ~\~ end */
 
