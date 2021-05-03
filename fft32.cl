@@ -1,11 +1,11 @@
 /* FFT
- * command: python -m fftsynth.generator --radix 2 --depth 5 --fpga --fma
+ * command: python -m fftsynth.generator --radix 2 --depth 5 --fpga --fma --ctype float8
  */
 /* ~\~ language=OpenCL filename=fftsynth/templates/preprocessor.cl */
 /* ~\~ begin <<lit/code-generator.md|fftsynth/templates/preprocessor.cl>>[0] */
 #pragma OPENCL EXTENSION cl_intel_channels : enable
 #include <ihc_apint.h>
-channel float2 in_channel, out_channel;
+channel float8 in_channel, out_channel;
 #define SWAP(type, x, y) do { type temp = x; x = y, y = temp; } while ( false );
 
 #define DIVR(x) ((x) >> 1)
@@ -175,9 +175,9 @@ inline int comp_perm_2(int i, int rem)
 /* ~\~ begin <<lit/fma-codelets.md|fftsynth/templates/fma-codelets.cl>>[0] */
 /* ~\~ begin <<lit/fma-codelets.md|fma-radix2>>[0] */
 
-void fft_2(float2 * restrict s0, float2 * restrict s1, float2 * restrict s0_in, float2 * restrict s1_in, float2 * restrict s0_out, float2 * restrict s1_out, bool first_iteration, bool last_iteration, int cycle, int i0, int i1, int iw)
+void fft_2(float8 * restrict s0, float8 * restrict s1, float8 * restrict s0_in, float8 * restrict s1_in, float8 * restrict s0_out, float8 * restrict s1_out, bool first_iteration, bool last_iteration, int cycle, int i0, int i1, int iw)
 {
-    float2 t0, t1, a, b;
+    float8 t0, t1, a, b;
     #ifndef TESTING
     __constant float2 *w = W[iw];
     #endif
@@ -198,12 +198,12 @@ void fft_2(float2 * restrict s0, float2 * restrict s1, float2 * restrict s0_in, 
         t0 = s0[i0]; t1 = s1[i1];
     }
     switch (cycle) {
-        case 1: SWAP(float2, t0, t1); break;
+        case 1: SWAP(float8, t0, t1); break;
     }
     
 
-    a = (float2) (-w[0].y * t1.y + t0.x, w[0].y * t1.x + t0.y);
-    a += (float2) (w[0].x * t1.x, w[0].x * t1.y);
+    a = (float8) (-w[0].odd * t1.odd + t0.even, w[0].odd * t1.even + t0.odd);
+    a += (float8) (w[0].even * t1.even, w[0].even * t1.odd);
     b = 2 * t0 - a;
 
     t0 = a;
@@ -211,7 +211,7 @@ void fft_2(float2 * restrict s0, float2 * restrict s1, float2 * restrict s0_in, 
 
     
     switch (cycle) {
-        case 1: SWAP(float2, t0, t1); break;
+        case 1: SWAP(float8, t0, t1); break;
     }
     if ( last_iteration )
     {
@@ -237,14 +237,14 @@ void fft_2(float2 * restrict s0, float2 * restrict s1, float2 * restrict s0_in, 
 #ifdef TESTING
 
 
-__kernel void test_radix_2(__global float2 *x, __global float2 *y, int n)
+__kernel void test_radix_2(__global float8 *x, __global float8 *y, int n)
 {
     int i = get_global_id(0) * 2;
 
     // n is the number of radix2 ffts to perform
     if ( i < 2 * n ) {
-        float2 s0 = x[i];
-        float2 s1 = x[i + 1];
+        float8 s0 = x[i];
+        float8 s1 = x[i + 1];
 
         fft_2(&s0, &s1, 0, 0, 0, 0);
 
@@ -263,7 +263,7 @@ __kernel void test_radix_2(__global float2 *x, __global float2 *y, int n)
 /* ~\~ end */
 /* ~\~ language=OpenCL filename=fftsynth/templates/fma-fft.cl */
 /* ~\~ begin <<lit/code-generator.md|fftsynth/templates/fma-fft.cl>>[0] */
-void fft_32_ps( float2 * restrict s0, float2 * restrict s1, float2 * restrict s0_in, float2 * restrict s1_in, float2 * restrict s0_out, float2 * restrict s1_out)
+void fft_32_ps( float8 * restrict s0, float8 * restrict s1, float8 * restrict s0_in, float8 * restrict s1_in, float8 * restrict s0_out, float8 * restrict s1_out)
 {
     int wp = 0;
 
@@ -294,8 +294,6 @@ void fft_32_ps( float2 * restrict s0, float2 * restrict s1, float2 * restrict s0
     }
 }
 /* ~\~ end */
-
-#if 0
 /* ~\~ begin <<lit/code-generator.md|fftsynth/templates/fma-fft.cl>>[1] */
 __kernel __attribute__((autorun)) __attribute__((max_global_work_dim(0)))
 void fft_32()
@@ -303,17 +301,17 @@ void fft_32()
     while ( true )
     {
     
-    float2 s0[16];
-    float2 s0_in[16], s0_out[16];
-    float2 s1[16];
-    float2 s1_in[16], s1_out[16];
+    float8 s0[16];
+    float8 s0_in[16], s0_out[16];
+    float8 s1[16];
+    float8 s1_in[16], s1_out[16];
 
     for ( uint6_t j = 0; j != 32; ++j )
     {
         int i = transpose_2(j);
         int p = parity_2(i);
 
-        float2 x = read_channel_intel(in_channel);
+        float8 x = read_channel_intel(in_channel);
         switch ( p )
         {
             case 0: s0_in[DIVR(i)] = x; break;
@@ -328,7 +326,7 @@ void fft_32()
     for ( uint6_t i = 0; i != 32; ++i )
     {
         int p = parity_2(i);
-        float2 y;
+        float8 y;
         switch ( p )
         {
             case 0: y = s0_out[DIVR(i)]; break;
@@ -340,10 +338,11 @@ void fft_32()
 }
 /* ~\~ end */
 
+#if 0
 /* ~\~ language=OpenCL filename=fftsynth/templates/fpga.cl */
 /* ~\~ begin <<lit/code-generator.md|fftsynth/templates/fpga.cl>>[0] */
 __kernel __attribute__((max_global_work_dim(0)))
-void source(__global const volatile float2 * in, unsigned count)
+void source(__global const volatile float8 * in, unsigned count)
 {
     #pragma ii 1
     for ( unsigned i = 0; i < count; i++ )
@@ -353,7 +352,7 @@ void source(__global const volatile float2 * in, unsigned count)
 }
 
 __kernel __attribute__((max_global_work_dim(0)))
-void sink(__global float2 *out, unsigned count)
+void sink(__global float8 *out, unsigned count)
 {
     #pragma ii 1
     for ( unsigned i = 0; i < count; i++ )
