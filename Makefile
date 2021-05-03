@@ -58,8 +58,8 @@ AOCXFLAGS += -high-effort
 # FFTW flags
 FFTW_LDFLAGS = -lfftw3f
 
-CLSOURCES = degridder.cl fft.cl gridder.cl sincos.cl
-CXXSOURCES = common/common.cpp common/init.cpp reference/degridder.cpp reference/fft.cpp reference/gridder.cpp run-fpga-degridder.cpp run-fpga-gridder.cpp run-fpga-sincos.cpp run-gpu-degridder.cpp run-gpu-gridder.cpp run-fpga-fft.cpp
+CLSOURCES = gridder.cl
+CXXSOURCES = common/common.cpp common/init.cpp reference/gridder.cpp run-fpga-gridder.cpp
 OBJECT_FILES = $(CXXSOURCES:%.cpp=%.o)
 EXECUTABLES = $(CXXSOURCES:%.cpp=%.x)
 FPGA_STUFF_SUBDIRS = $(CLSOURCES:%.cl=%)
@@ -67,16 +67,10 @@ DEPENDENCIES = $(CXXSOURCES:%.cpp=%.d) $(CLSOURCES:%.cl=%.d)
 
 TMPDIR ?= /tmp
 
-default:: run-fpga-gridder.x gridder.aocx run-fpga-degridder.x degridder.aocx run-fpga-fft.x fft.aocx run-fpga-sincos.x sincos.aocx
+default:: run-fpga-gridder.x gridder.aocx
 
 run-fpga-%.x: run-fpga-%.o common/common.o common/init.o reference/fft.o reference/%.o
 	${CXX} ${LDFLAGS} ${FFTW_LDFLAGS} -o $@ $^
-
-run-fpga-fft.x: run-fpga-fft.o common/common.o reference/fft.o
-	${CXX} ${LDFLAGS} ${FFTW_LDFLAGS} -o $@ $^
-
-run-fpga-sincos.x: run-fpga-sincos.o common/common.o
-	${CXX} ${LDFLAGS} -o $@ $^
 
 %.d: %.cpp
 	${CXX} -MM -MT $*.o ${CXXFLAGS} ${INCLUDES} -o $@ $^
