@@ -204,8 +204,8 @@ void fft_2(float8 * restrict s0, float8 * restrict s1, float8 * restrict s0_in, 
     }
     
 
-    a = (float8) (-w[0].odd * t1.odd + t0.even, w[0].odd * t1.even + t0.odd);
-    a += (float8) (w[0].even * t1.even, w[0].even * t1.odd);
+    a.even = -w[0].odd * t1.odd + t0.even + w[0].even * t1.even;
+    a.odd = w[0].odd * t1.even + t0.odd + w[0].even * t1.odd;
     b = 2 * t0 - a;
 
     t0 = a;
