@@ -342,6 +342,54 @@ void fft_32()
 #endif // TESTING
 /* ~\~ end */
 
+inline void fft_32x32_4(float8 out[restrict 32][32], /*float8 out_upper[restrict 16][32], float8 out_lower[restrict 16][32],*/  const float8 in[restrict 32][32], int sign)
+{
+ float8 s0[16], s1[16], s0_in[16], s1_in[16], s0_out[16], s1_out[16];
+
+#pragma loop_coalesce 2
+#pragma ii 1
+  for (uint2_t dim = 0; dim < 2; dim ++) {
+#pragma ii 1
+#pragma ivdep
+      for (uint6_t n = 0; n < 32; ++n) {
+          for (uint6_t m = 0; m < 32; ++m) {
+              uint6_t xi, yi;
+              xi = dim == 0 ? n : m;
+              yi = dim == 0 ? m : n;
+
+              int i = transpose_2(m);
+              int p = parity_2(i);
+              if (dim == 0) {
+                  switch (p)
+                  {
+                      case 0: s0_in[DIVR(i)] = in[xi][yi]; break;
+                      case 1: s1_in[DIVR(i)] = in[xi][yi]; break;
+                  }
+              } else {
+                  switch (p)
+                  {
+                      case 0: s0_in[DIVR(i)] = out[xi][yi]; break;
+                      case 1: s1_in[DIVR(i)] = out[xi][yi]; break;
+                  }
+              }
+          }
+
+          fft_32_ps(s0, s1, s0_in, s1_in, s0_out, s1_out);
+          
+          for (uint6_t i = 0; i < 32; ++i) {
+              int p = parity_2(i);
+              uint6_t xi, yi;
+              xi = dim == 0 ? n : i;
+              yi = dim == 0 ? i : n;
+              switch (p) {
+                  case 0: out[xi][yi] = s0_out[DIVR(i)]; break;
+                  case 1: out[xi][yi] = s1_out[DIVR(i)]; break;
+              }
+          }
+      }
+  }
+}
+
 /* ~\~ language=OpenCL filename=fftsynth/templates/fpga.cl */
 /* ~\~ begin <<lit/code-generator.md|fftsynth/templates/fpga.cl>>[0] */
 #ifdef TESTING
