@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     // Run reference
     std::clog << ">>> Run reference" << std::endl;
     idg::Array4D<std::complex<float>> subgrids_ref(NR_SUBGRIDS, NR_CORRELATIONS, SUBGRID_SIZE, SUBGRID_SIZE);
-#if 0
+#if 1 
     kernel_gridder(
         NR_SUBGRIDS, GRID_SIZE, SUBGRID_SIZE, IMAGE_SIZE, W_STEP, NR_CHANNELS, NR_STATIONS,
         uvw.data(), wavenumbers.data(), (std::complex<float> *) visibilities.data(),
