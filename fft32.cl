@@ -236,7 +236,7 @@ void fft_2(float8 * restrict s0, float8 * restrict s1, float8 * restrict s0_in, 
 
 
 /* ~\~ begin <<lit/fma-codelets.md|fma-codelet-tests>>[0] */
-#ifdef TESTING
+#ifdef TESTING_RADIX
 
 
 __kernel void test_radix_2(__global float8 *x, __global float8 *y, int n)
@@ -260,7 +260,7 @@ __kernel void test_radix_2(__global float8 *x, __global float8 *y, int n)
 
 
 
-#endif // TESTING
+#endif // TESTING_RADIX
 /* ~\~ end */
 /* ~\~ end */
 /* ~\~ language=OpenCL filename=fftsynth/templates/fma-fft.cl */
@@ -296,3 +296,74 @@ void fft_32_ps( float8 * restrict s0, float8 * restrict s1, float8 * restrict s0
     }
 }
 /* ~\~ end */
+/* ~\~ begin <<lit/code-generator.md|fftsynth/templates/fma-fft.cl>>[1] */
+#ifdef TESTING
+__kernel __attribute__((autorun)) __attribute__((max_global_work_dim(0)))
+void fft_32()
+{
+    while ( true )
+    {
+    
+    float8 s0[16];
+    float8 s0_in[16], s0_out[16];
+    float8 s1[16];
+    float8 s1_in[16], s1_out[16];
+
+    for ( uint6_t j = 0; j != 32; ++j )
+    {
+        int i = transpose_2(j);
+        int p = parity_2(i);
+
+        float8 x = read_channel_intel(in_channel);
+        switch ( p )
+        {
+            case 0: s0_in[DIVR(i)] = x; break;
+            case 1: s1_in[DIVR(i)] = x; break;
+        }
+    }
+
+    
+    fft_32_ps( s0, s1, s0_in, s1_in, s0_out, s1_out);
+    
+
+    for ( uint6_t i = 0; i != 32; ++i )
+    {
+        int p = parity_2(i);
+        float8 y;
+        switch ( p )
+        {
+            case 0: y = s0_out[DIVR(i)]; break;
+            case 1: y = s1_out[DIVR(i)]; break;
+        }
+        write_channel_intel(out_channel, y);
+    }
+    }
+}
+#endif // TESTING
+/* ~\~ end */
+
+/* ~\~ language=OpenCL filename=fftsynth/templates/fpga.cl */
+/* ~\~ begin <<lit/code-generator.md|fftsynth/templates/fpga.cl>>[0] */
+#ifdef TESTING
+__kernel __attribute__((max_global_work_dim(0)))
+void source(__global const volatile float8 * in, unsigned count)
+{
+    #pragma ii 1
+    for ( unsigned i = 0; i < count; i++ )
+    {
+        write_channel_intel(in_channel, in[i]);
+    }
+}
+
+__kernel __attribute__((max_global_work_dim(0)))
+void sink(__global float8 *out, unsigned count)
+{
+    #pragma ii 1
+    for ( unsigned i = 0; i < count; i++ )
+    {
+        out[i] = read_channel_intel(out_channel);
+    }
+}
+#endif // TESTING
+/* ~\~ end */
+
