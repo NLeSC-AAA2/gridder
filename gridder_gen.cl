@@ -2434,7 +2434,6 @@ void do_fft(__global float2 out[restrict NR_POLARIZATIONS][NR_PIXELS], float8 da
   for (unsigned short polarization = 0; polarization < NR_POLARIZATIONS; polarization ++)
     for (unsigned short pixel = 0; pixel < NR_PIXELS; pixel ++) {
       unsigned short x = pixel % SUBGRID_SIZE, y = pixel / SUBGRID_SIZE;
-      // float8         tmp = y >= 16 ? tmp_upper[y & 15][x] : tmp_lower[y][x];
 
       out[polarization][pixel] = (float2) (tmp[y][x][2 * polarization + REAL], tmp[y][x][2 * polarization + IMAG]);
     }
