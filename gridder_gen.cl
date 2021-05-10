@@ -2383,8 +2383,9 @@ inline void fft_32x32_4(float8 out[restrict 32][32], /*float8 out_upper[restrict
 #pragma loop_coalesce 2
 #pragma ii 1
   for (uint2_t dim = 0; dim < 2; dim ++) {
-#pragma ii 1
     /* Loop over the number of FFTs */
+#pragma ii 1
+#pragma ivdep
     for (uint6_t n = 0; n < 32; ++n) {
       float8 s0[16], s1[16], s0_in[16], s1_in[16], s0_out[16], s1_out[16];
 
