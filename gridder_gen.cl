@@ -2384,36 +2384,35 @@ inline void fft_32x32_4(float8 out[restrict 32][32], /*float8 out_upper[restrict
 #pragma ii 1
   for (uint2_t dim = 0; dim < 2; dim ++) {
 #pragma ii 1
-      for (uint6_t n = 0; n < 32; ++n) {
- 		  float8 s0[16], s1[16], s0_in[16], s1_in[16], s0_out[16], s1_out[16];
+    /* Loop over the number of FFTs */
+    for (uint6_t n = 0; n < 32; ++n) {
+      float8 s0[16], s1[16], s0_in[16], s1_in[16], s0_out[16], s1_out[16];
 
-          for (uint6_t m = 0; m < 32; ++m) {  // m is dimension of fft
-              uint6_t xi, yi;
-              xi = dim == 0 ? n : m;
-              yi = dim == 0 ? m : n;
+      /* Loop over the size of the FFT */
+      for (uint6_t m = 0; m < 32; ++m) {
+        uint6_t xi = dim == 0 ? n : m;
+        uint6_t yi = dim == 0 ? m : n;
+        int i = transpose_2(m);
+        int p = parity_2(i);
 
-              int i = transpose_2(m);
-              int p = parity_2(i);
-			  switch (p)
-			  {
-				  case 0: s0_in[DIVR(i)] = dim == 0 ? in[xi][yi] : out[xi][yi]; break;
-				  case 1: s1_in[DIVR(i)] = dim == 0 ? in[xi][yi] : out[xi][yi]; break;
-			  }
-          }
-
-          fft_32_ps(s0, s1, s0_in, s1_in, s0_out, s1_out);
-          
-          for (uint6_t i = 0; i < 32; ++i) {
-              int p = parity_2(i);
-              uint6_t xi, yi;
-              xi = dim == 0 ? n : i;
-              yi = dim == 0 ? i : n;
-              switch (p) {
-                  case 0: out[xi][yi] = s0_out[DIVR(i)]; break;
-                  case 1: out[xi][yi] = s1_out[DIVR(i)]; break;
-              }
-          }
+        switch (p)
+        {
+          case 0: s0_in[DIVR(i)] = dim == 0 ? in[xi][yi] : out[xi][yi]; break;
+          case 1: s1_in[DIVR(i)] = dim == 0 ? in[xi][yi] : out[xi][yi]; break;
+        }
       }
+
+      fft_32_ps(s0, s1, s0_in, s1_in, s0_out, s1_out);
+      
+      /* Loop over the size of the FFT */
+      for (uint6_t i = 0; i < 32; ++i) {
+        uint6_t xi = dim == 0 ? n : i;
+        uint6_t yi = dim == 0 ? i : n;
+        int p = parity_2(i);
+        
+        out[xi][yi] = p == 0 ? s0_out[DIVR(i)] : s1_out[DIVR(i)];
+      }
+    }
   }
 }
 
