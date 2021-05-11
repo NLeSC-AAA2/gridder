@@ -1,13 +1,12 @@
+#include "fft8.cl"
+
 #define NR_RECEIVERS		576
 #define	NR_SAMPLES_PER_CHANNEL	3072
 #define NR_CHANNELS		64
 #define NR_TAPS			16
 #define SUBBAND_BANDWIDTH	195312.5f
 
-
 typedef float2 fcomplex;
-
-#define DIR (-1)
 
 
 inline float2 cmul(float2 a, float2 b)
@@ -18,29 +17,33 @@ inline float2 cmul(float2 a, float2 b)
 
 void fft(const float2 *restrict in, float2 *restrict out)
 {
-  float2 a[8][8], b[8][8], c[8][8], d[8][8];
+  /* Loop over the number of FFTs */
+  for ( uint4_t n = 0; n < 8; ++n )
+  {
+    float2 s0[4], s1[4], s0_in[4], s1_in[4], s0_out[4], s1_out[4];
 
-#pragma unroll
-  for (int i = 0; i < 8; i ++)
-#pragma unroll
-    for (int j = 0; j < 8; j ++)
-      a[j][i] = in[8*i+j];
+    /* Loop over the size of the FFT */
+    for ( uint4_t m = 0; m < 8; ++m )
+    {
+      int i = transpose_2(m);
+      int p = parity_2(i);
 
-  radix_8x8_fwd(b, a);
+      switch ( p )
+      {
+        case 0: s0_in[DIVR(i)] = in[(n * 8) + m]; break;
+        case 1: s1_in[DIVR(i)] = in[(n * 8) + m]; break;
+      }
+    }
+    /* FFT call */
+    fft_8_ps(s0, s1, s0_in, s1_in, s0_out, s1_out);
+    /* Loop over the size of the FFT */
+    for ( uint4_t m = 0; m < 8; ++m )
+    {
+      int p = parity_2(m);
 
-#pragma unroll
-  for (int i = 0; i < 8; i ++)
-#pragma unroll
-    for (int j = 0; j < 8; j ++)
-      c[i][j] = cmul(b[i][j], weights[i][j]);
-
-  radix_8x8_fwd(d, c);
-
-#pragma unroll
-  for (int i = 0; i < 8; i ++)
-#pragma unroll
-    for (int j = 0; j < 8; j ++)
-      out[8 * i + j] = d[i][j];
+      out[(n * 8) + m] = p == 0 ? s0_out[DIVR(m)] : s1_out[DIVR(m)];
+    }
+  }
 }
 
 
