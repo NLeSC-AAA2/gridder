@@ -220,15 +220,18 @@ typedef std::complex<float> OutputType[NR_RECEIVERS][NR_SAMPLES_PER_CHANNEL][NR_
 
 
 
-int main()
+int main(int argc, char * argv[])
 {
+  if ( argc != 2) {
+    std::cerr << "Usage: " << argv[0] << " <AOCX file>" << std::endl;
+    exit(-1);
+  }
   try {
     cl::Context             context;
     std::vector<cl::Device> devices;
     createContext(context, devices);
 
-    cl::Program program(createProgramFromBinaries(context, devices, "Fused2.aocx"));
-    //cl::Program      program(createProgramFromSources(context, devices, "Fused.cl", "-I. -cl-fast-relaxed-math"));
+    cl::Program program(createProgramFromBinaries(context, devices, std::string(argv[1])));
     cl::CommandQueue queue(context, devices[0], CL_QUEUE_PROFILING_ENABLE);
 
     cl::Buffer inputBuffer(context, CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, sizeof(InputType));
