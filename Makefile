@@ -72,6 +72,9 @@ default:: run-fpga-gridder.x gridder.aocx
 run-fpga-%.x: run-fpga-%.o common/common.o common/init.o reference/fft.o reference/%.o
 	${CXX} ${LDFLAGS} ${FFTW_LDFLAGS} -o $@ $^
 
+run-fpga-fused.x: run-fpga-fused.o
+	${CXX} ${LDFLAGS} ${FFTW_LDFLAGS} -o $@ $^
+
 %.d: %.cpp
 	${CXX} -MM -MT $*.o ${CXXFLAGS} ${INCLUDES} -o $@ $^
 
