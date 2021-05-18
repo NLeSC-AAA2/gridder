@@ -267,7 +267,7 @@ int main(int argc, char * argv[])
 
     cl::Event event;
 
-#if 0
+#if 1
     cl::Kernel kernel(program, "fused");
     kernel.setArg(0, inputBuffer);
     kernel.setArg(1, firFilterWeightsBuffer);
