@@ -1,4 +1,4 @@
-#include "fft8.cl"
+#include "fft64.cl"
 
 #define NR_RECEIVERS		576
 #define	NR_SAMPLES_PER_CHANNEL	3072
