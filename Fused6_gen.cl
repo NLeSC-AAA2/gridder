@@ -17,32 +17,45 @@ inline float2 cmul(float2 a, float2 b)
 
 void fft(const float2 *restrict in, float2 *restrict out)
 {
-  /* Loop over the number of FFTs */
-  for ( uint4_t n = 0; n < 8; ++n )
+  float2 s0[16];
+  float2 s0_in[16], s0_out[16];
+  float2 s1[16];
+  float2 s1_in[16], s1_out[16];
+  float2 s2[16];
+  float2 s2_in[16], s2_out[16];
+  float2 s3[16];
+  float2 s3_in[16], s3_out[16];
+  
+  /* Loop over the number of FFTs to load input */
+  for ( uint7_t j = 0; j != 64; ++j )
   {
-    float2 s0[4], s1[4], s0_in[4], s1_in[4], s0_out[4], s1_out[4];
+    int i = transpose_4(j);
+    int p = parity_4(i);
 
-    /* Loop over the size of the FFT */
-    for ( uint4_t m = 0; m < 8; ++m )
+    switch ( p )
     {
-      int i = transpose_2(m);
-      int p = parity_2(i);
-
-      switch ( p )
-      {
-        case 0: s0_in[DIVR(i)] = in[(n * 8) + m]; break;
-        case 1: s1_in[DIVR(i)] = in[(n * 8) + m]; break;
-      }
+      case 0: s0_in[DIVR(i)] = in[j]; break;
+      case 1: s1_in[DIVR(i)] = in[j]; break;
+      case 2: s2_in[DIVR(i)] = in[j]; break;
+      case 3: s3_in[DIVR(i)] = in[j]; break;
     }
-    /* FFT call */
-    fft_8_ps(s0, s1, s0_in, s1_in, s0_out, s1_out);
-    /* Loop over the size of the FFT */
-    for ( uint4_t m = 0; m < 8; ++m )
+  }
+  /* FFT call */
+  fft_64_ps( s0, s1, s2, s3, s0_in, s1_in, s2_in, s3_in, s0_out, s1_out, s2_out, s3_out);
+  /* Loop over the number of FFTs to store output */
+  for ( uint7_t i = 0; i != 64; ++i )
+  {
+    int p = parity_4(i);
+    float2 y;
+
+    switch ( p )
     {
-      int p = parity_2(m);
-
-      out[(n * 8) + m] = p == 0 ? s0_out[DIVR(m)] : s1_out[DIVR(m)];
+      case 0: y = s0_out[DIVR(i)]; break;
+      case 1: y = s1_out[DIVR(i)]; break;
+      case 2: y = s2_out[DIVR(i)]; break;
+      case 3: y = s3_out[DIVR(i)]; break;
     }
+    out[i] = y;
   }
 }
 
